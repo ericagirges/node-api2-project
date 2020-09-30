@@ -86,11 +86,15 @@ router.post("/:id/comments", (req, res) => {
       .status(404)
       .json({ message: "The post with the specified ID does not exist." });
   } else if (comment.text) {
-    db.insertComment(comment)
+    db.insertComment({
+      post_id: req.params.id,
+      ...comment,
+    })
       .then((result) => {
         res.status(201).json({ result });
       })
       .catch((error) => {
+        console.log(error);
         res.status(500).json({
           error: "There was an error while saving the comment to the database",
         });
@@ -106,21 +110,44 @@ router.post("/:id/comments", (req, res) => {
 router.delete("/:id", (req, res) => {
   const id = req.params.id;
   db.remove(id)
-  .then(post => {
-    if (post > 0) {
-      res.status(200).json({ message: "This post has been deleted." });
-    } else {
-      res.status(404).json({ message: "The post with the specified ID does not exist." });
-    }
-  })
-  .catch(error => {
-    // log error to database
-    console.log(error);
-    res.status(500).json({
-        error: "The post could not be removed"
+    .then((post) => {
+      if (post > 0) {
+        res.status(200).json({ message: "This post has been deleted." });
+      } else {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist." });
+      }
+    })
+    .catch((error) => {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        error: "The post could not be removed",
+      });
     });
-  });
 });
 
-// PUT 
+// PUT
+router.put("/:id", (req, res) => {
+  const changes = req.body;
+  db.update(req.params.id, changes)
+    .then((post) => {
+      if (post) {
+        res.status(200).json(post);
+      } else {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist." });
+      }
+    })
+    .catch((error) => {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        error: "The post information could not be modified.",
+      });
+    });
+});
+
 module.exports = router;
