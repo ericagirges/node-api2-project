@@ -38,20 +38,76 @@ router.get("/:id", (req, res) => {
     });
 });
 
+// GET post comments by post id
+router.get("/:id/comments", (req, res) => {
+  db.findCommentById(req.params.id)
+    .then((comments) => {
+      if (comments) {
+        res.status(200).json(comments);
+      } else {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist." });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res
+        .status(500)
+        .json({ error: "The comments information could not be retrieved." });
+    });
+});
+
 // POST a new post to posts
 router.post("/", (req, res) => {
-    db.insert(req.body)
+  if (!req.body.title || !req.body.contents) {
+    res.status(400).json({
+      errorMessage: "Please provide title and contents for the post.",
+    });
+    return;
+  }
+  db.insert(req.body)
     .then((post) => {
-        if(!post.title || !post.contents) {
-           res.status(400).json({ errorMessage: "Please provide title and contents for the post." }) 
-        } else {
-            res.status(201).json(post);
-        }
+      res.status(200).json(post);
     })
-    .catch(error => {
-        console.log(error);
-        res.status(500).json({ error: "There was an error while saving the post to the database" })
-    })
-})
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({
+        error: "There was an error while saving the post to the database",
+      });
+    });
+});
 
+router.post("/:id/comments", (req, res) => {
+  const comment = req.body; // comment data
+  const findPost = db.findById(req.params.id);
+  if (!findPost) {
+    res
+      .status(404)
+      .json({ message: "The post with the specified ID does not exist." });
+  } else if (comment.text) {
+    db.insertComment(comment)
+      .then((result) => {
+        res.status(201).json({ result });
+      })
+      .catch((error) => {
+        res.status(500).json({
+          error: "There was an error while saving the comment to the database",
+        });
+      });
+  } else {
+    res
+      .status(400)
+      .json({ errorMessage: "Please provide text for the comment." });
+  }
+});
+
+// DELETE
+router.delete("/:id", (req, res) => {
+  const id = req.params.id;
+  db.remove(id)
+  .then(post => {
+      
+  })
+});
 module.exports = router;
